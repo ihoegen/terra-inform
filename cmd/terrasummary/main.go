@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"math/rand"
+	"time"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -35,8 +37,13 @@ func main() {
 		
 		// For apply without auto-approve, run plan first to get the changes
 		if args[0] == "apply" && !contains(args, "-auto-approve") {
-			planCmd := exec.Command("terraform", "plan")
-			planCmd.Stdout = &planOutput
+			// Generate random suffix for the plan file
+			rand.Seed(time.Now().UnixNano())
+			planFile := fmt.Sprintf("/tmp/tfplan-%d", rand.Int63())
+
+			// Create plan file
+			planCmd := exec.Command("terraform", "plan", "-out="+planFile)
+			planCmd.Stdout = io.MultiWriter(os.Stdout, &planOutput)
 			planCmd.Stderr = os.Stderr
 			if err := planCmd.Run(); err != nil {
 				fmt.Printf("Error running terraform plan: %v\n", err)
@@ -46,16 +53,32 @@ func main() {
 			// Generate and print summary before running apply
 			printAISummary(planOutput.String())
 
-			// Now run the actual apply command with full terminal interaction
-			cmd := exec.Command("terraform", args...)
+			// Ask for confirmation
+			fmt.Print("\nDo you want to perform these actions? Only 'yes' will be accepted to approve.\n\n")
+			fmt.Print("Enter a value: ")
+
+			var response string
+			fmt.Scanln(&response)
+
+			if response != "yes" {
+				fmt.Println("Apply cancelled.")
+				os.Remove(planFile)
+				os.Exit(0)
+			}
+
+			// Now run apply with the saved plan file and auto-approve
+			cmd := exec.Command("terraform", "apply", "-auto-approve", planFile)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			cmd.Stdin = os.Stdin  // This is key - we pass through stdin directly
+			cmd.Stdin = os.Stdin
 			
 			if err := cmd.Run(); err != nil {
 				fmt.Printf("Error running terraform apply: %v\n", err)
 				os.Exit(1)
 			}
+
+			// Clean up the plan file
+			os.Remove(planFile)
 		} else {
 			// For plan or apply with auto-approve
 			cmd := exec.Command("terraform", args...)
@@ -67,10 +90,10 @@ func main() {
 				fmt.Printf("Error running terraform: %v\n", err)
 				os.Exit(1)
 			}
+
+			printAISummary(planOutput.String())
 		}
 
-		// Generate summary using OpenAI
-		printAISummary(planOutput.String())
 	} else {
 		// For all other commands, just pass through to terraform
 		cmd := exec.Command("terraform", args...)
