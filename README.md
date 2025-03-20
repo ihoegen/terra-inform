@@ -1,6 +1,6 @@
-# Terrasummary
+# terra-inform
 
-Terrasummary is a simple wrapper around the Terraform CLI that provides AI-powered summaries of your Terraform plans and applies. It works exactly like the regular Terraform CLI but adds helpful summaries to make infrastructure changes more understandable.
+terra-inform is a simple wrapper around the Terraform CLI that provides AI-powered summaries of your Terraform plans and applies. It works exactly like the regular Terraform CLI but adds helpful summaries to make infrastructure changes more understandable.
 
 ## Features
 
@@ -25,7 +25,7 @@ Terrasummary is a simple wrapper around the Terraform CLI that provides AI-power
 
 2. Install the package:
    ```bash
-   go install github.com/ihoegen/terrasummary/cmd/terrasummary@latest
+   go install github.com/ihoegen/terra-inform/cmd/terra-inform@latest
    ```
 
 ## Configuration
@@ -39,24 +39,24 @@ export OPENAI_API_KEY='your-api-key-here'
 Optionally, configure the OpenAI model to use (defaults to GPT-4o):
 
 ```bash
-export TERRASUMMARY_MODEL='o3-mini'  # Example: use GPT-3.5 Turbo instead
+export terra-inform_MODEL='o3-mini'  # Example: use GPT-3.5 Turbo instead
 ```
 
 ## Usage
 
-Use terrasummary exactly as you would use the terraform command:
+Use terra-inform exactly as you would use the terraform command:
 
 ```bash
 # Instead of: terraform plan
-terrasummary plan
+terra-inform plan
 
 # Instead of: terraform apply
-terrasummary apply
+terra-inform apply
 
 # Any other terraform commands work the same way
-terrasummary init
-terrasummary validate
-terrasummary destroy
+terra-inform init
+terra-inform validate
+terra-inform destroy
 ```
 
 When running `plan` or `apply`, you'll get the standard Terraform output plus an AI-generated summary of the changes.

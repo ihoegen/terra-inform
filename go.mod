@@ -1,4 +1,4 @@
-module github.com/ihoegen/terrasummary
+module github.com/ihoegen/terra-inform
 
 go 1.21
 

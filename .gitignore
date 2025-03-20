@@ -1,10 +1,9 @@
-# Binaries for programs and plugins
+/terra-inform
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-/terrasummary
 
 # Test binary, built with `go test -c`
 *.test
@@ -13,22 +12,12 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-vendor/
+# vendor/
 
 # Go workspace file
 go.work
+go.work.sum
 
-# IDE specific files
-.idea
-.vscode
-*.swp
-*.swo
-
-# OS generated files
+# env file
+.env
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
