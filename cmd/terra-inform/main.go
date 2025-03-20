@@ -23,6 +23,7 @@ var (
 	// Define all available checks here
 	allChecks = []checks.Check{
 		checks.NewSummarizer(),
+		checks.NewDowntimeAnalyzer(),
 		// Add more checks here as we create them
 	}
 )
@@ -237,6 +238,6 @@ func printAISummary(planOutput string) {
 			fmt.Printf("\n❌ %s check failed: %v\n", result.CheckName, result.Error)
 			continue
 		}
-		fmt.Printf("\n✅ %s:\n%s\n", result.CheckName, result.Result)
+		fmt.Printf("\n%s:\n%s\n", result.CheckName, result.Result)
 	}
 } 
