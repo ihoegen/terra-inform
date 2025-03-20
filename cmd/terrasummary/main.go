@@ -43,6 +43,9 @@ func main() {
 				os.Exit(1)
 			}
 
+			// Generate and print summary before running apply
+			printAISummary(planOutput.String())
+
 			// Now run the actual apply command with full terminal interaction
 			cmd := exec.Command("terraform", args...)
 			cmd.Stdout = os.Stdout
@@ -67,11 +70,7 @@ func main() {
 		}
 
 		// Generate summary using OpenAI
-		if planOutput.Len() > 0 {
-			fmt.Println("\nGenerating summary using OpenAI Model:", getOpenAIModel())
-			summary := generateSummary(planOutput.String())
-			fmt.Printf("\n🤖 AI Summary of Changes:\n%s\n", summary)
-		}
+		printAISummary(planOutput.String())
 	} else {
 		// For all other commands, just pass through to terraform
 		cmd := exec.Command("terraform", args...)
@@ -119,4 +118,13 @@ func generateSummary(planOutput string) string {
 	}
 
 	return chatCompletion.Choices[0].Message.Content
+}
+
+func printAISummary(planOutput string) {
+	if planOutput == "" {
+		return
+	}
+	fmt.Println("\nGenerating summary using OpenAI Model:", getOpenAIModel())
+	summary := generateSummary(planOutput)
+	fmt.Printf("\n🤖 AI Summary of Changes:\n%s\n", summary)
 } 
