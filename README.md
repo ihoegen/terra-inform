@@ -9,8 +9,19 @@ terra-inform is a simple wrapper around the Terraform CLI that provides AI-power
 - AI analysis of errors when Terraform commands fail
 - Analyzes potential downtime risks from your infrastructure changes
 - Maintains all standard Terraform functionality, including interactive approval for applies
+- Display full Terraform plan diffs, along side the AI summary - great for sanity checks
 - Forwards all other Terraform commands directly to the Terraform CLI
 - Configurable OpenAI model selection via CLI flags or environment variables
+
+## Example
+
+Here's what terra-inform can do for you:
+
+**Before:** Standard Terraform output  
+![Before terra-inform](assets/before.png)
+
+**After:** Human readable output, right after the standard output
+![After terra-inform](assets/after.png)
 
 ## Prerequisites
 
