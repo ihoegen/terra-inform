@@ -46,19 +46,16 @@ func RunChecksInParallel(checksToRun []checks.Check, input string, processFn Pro
 		}(check)
 	}
 
-	// Wait for all checks to complete in a separate goroutine
 	go func() {
 		wg.Wait()
 		close(resultsChan)
 	}()
 
-	// Collect results in order they complete
 	var results []CheckResult
 	for result := range resultsChan {
 		results = append(results, result)
 	}
 
-	// Sort results to match input order
 	sortedResults := make([]CheckResult, len(checksToRun))
 	checkMap := make(map[string]CheckResult)
 	for _, result := range results {

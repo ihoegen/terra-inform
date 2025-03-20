@@ -8,12 +8,9 @@ import (
 	"strings"
 	"math/rand"
 	"time"
-	"context"
 
 	"github.com/ihoegen/terra-inform/pkg/checks"
 	"github.com/ihoegen/terra-inform/pkg/provider"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 )
 
 var (
@@ -117,44 +114,37 @@ func analyzeWithCheck(check checks.Check, input string) (string, error) {
 		return "", fmt.Errorf("no input to analyze")
 	}
 	
-	client := openai.NewClient(
-		option.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-	)
-	
-	chatCompletion, err := client.Chat.Completions.New(
-		context.Background(),
-		openai.ChatCompletionNewParams{
-			Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-				openai.SystemMessage(check.GetPrompt(input)),
-			}),
-			Model:     openai.F(modelName),
-			MaxTokens: openai.F(int64(500)),
-		},
-	)
-	
-	if err != nil {
-		return "", fmt.Errorf("error analyzing with %s: %v", check.GetName(), err)
+	// Use the provider to run a single check
+	results := aiProvider.ProcessChecks([]checks.Check{check}, input)
+	if len(results) < 1 {
+		return "", fmt.Errorf("no results returned from check")
 	}
 	
-	return chatCompletion.Choices[0].Message.Content, nil
+	result := results[0]
+	if result.Error != nil {
+		return "", result.Error
+	}
+	
+	return result.Result, nil
 }
 
 func main() {
-	// Parse arguments
+	// Default to env vars if set
+	if envProvider := os.Getenv("TERRA_INFORM_MODEL_PROVIDER"); envProvider != "" {
+		providerName = envProvider
+	}
+	if envModel := os.Getenv("TERRA_INFORM_MODEL_NAME"); envModel != "" {
+		modelName = envModel
+	}
+
 	tfArgs, showHelp := parseArgs(os.Args)
 	
-	// Show help and exit if requested or no terraform commands
 	if showHelp || len(tfArgs) == 0 {
 		showHelpAndExit()
 	}
 	
-	// Override with environment variables if set
-	if envProvider := os.Getenv("terra-inform_MODEL_PROVIDER"); envProvider != "" {
-		providerName = envProvider
-	}
-	if envModel := os.Getenv("terra-inform_MODEL_NAME"); envModel != "" {
-		modelName = envModel
-	}
+	// Override with command line flags (these take precedence over env vars)
+	// (this is already handled by parseArgs)
 
 	// Initialize provider
 	switch providerName {
@@ -169,22 +159,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Forward all arguments to terraform
 	args := tfArgs
 
 	// If it's a plan or apply command, we need to capture the output
 	if args[0] == "plan" || args[0] == "apply" {
-		// For apply without auto-approve, run plan first to get the changes
 		if args[0] == "apply" && !contains(args, "-auto-approve") {
-			// Generate random suffix for the plan file
 			rand.Seed(time.Now().UnixNano())
 			planFile := fmt.Sprintf("/tmp/tfplan-%d", rand.Int63())
 
-			// Create plan file
 			planCmd := exec.Command("terraform", "plan", "-out="+planFile)
 			runAndAnalyzeCommand(planCmd, true)
 
-			// Ask for confirmation
 			fmt.Print("\nDo you want to perform these actions? Only 'yes' will be accepted to approve.\n\n")
 			fmt.Print("Enter a value: ")
 
@@ -197,19 +182,15 @@ func main() {
 				os.Exit(0)
 			}
 
-			// Now run apply with the saved plan file and auto-approve
 			cmd := exec.Command("terraform", "apply", "-auto-approve", planFile)
 			runAndAnalyzeCommand(cmd, false)
 
-			// Clean up the plan file
 			os.Remove(planFile)
 		} else {
-			// For plan or apply with auto-approve
 			cmd := exec.Command("terraform", args...)
 			runAndAnalyzeCommand(cmd, true)
 		}
 	} else {
-		// For all other commands, just pass through to terraform
 		cmd := exec.Command("terraform", args...)
 		runAndAnalyzeCommand(cmd, false)
 	}
